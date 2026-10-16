@@ -1,0 +1,23 @@
+[package]
+name = "ike_toggle"
+version = "0.1.0"
+authors = []
+edition = "2021"
+
+[package.metadata.skyline]
+titleid = "01006A800016E000" # Smash Ultimate
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+skyline = { git = "https://github.com/ultimate-research/skyline-rs.git" }
+skyline_smash = { git = "https://github.com/ultimate-research/skyline-smash.git" }
+smashline = { git = "https://github.com/blu-dev/smashline" }
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
+lto = true
