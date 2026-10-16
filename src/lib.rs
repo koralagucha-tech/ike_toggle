@@ -24,7 +24,9 @@ const TOGGLE_TAUNT_R: &str = "appeal_lw_r";
 
 // One flag per player slot, so two Ikes don't share the same toggle.
 // false = normal outfit, true = Ears + Tail visible, Shirt hidden.
-static TOGGLE_STATE: [AtomicBool; 8] = [const { AtomicBool::new(false) }; 8];
+#[allow(clippy::declare_interior_mutable_const)]
+const OFF: AtomicBool = AtomicBool::new(false);
+static TOGGLE_STATE: [AtomicBool; 8] = [OFF; 8];
 
 // ---------------------------------------------------------------------------
 // Helpers
