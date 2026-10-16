@@ -4,9 +4,7 @@ use skyline::install_hooks;
 use smash::app::lua_bind::*;
 use smash::app::{utility, BattleObjectModuleAccessor};
 use smash::lib::lua_const::*;
-use smash::lua2cpp::L2CFighterCommon;
 use smash::phx::Hash40;
-use smashline::*;
 
 // ---------------------------------------------------------------------------
 // Config
@@ -33,7 +31,7 @@ static TOGGLE_STATE: [AtomicBool; 8] = [OFF; 8];
 // ---------------------------------------------------------------------------
 
 unsafe fn is_ike(module_accessor: *mut BattleObjectModuleAccessor) -> bool {
-    // change_motion is also called for weapons/items, so make sure
+    // These hooks also run for weapons/items, so make sure
     // this is really a fighter before checking the kind.
     utility::get_category(&mut *module_accessor) == *BATTLE_OBJECT_CATEGORY_FIGHTER
         && utility::get_kind(&mut *module_accessor) == *FIGHTER_KIND_IKE
@@ -50,7 +48,7 @@ unsafe fn apply_meshes(module_accessor: *mut BattleObjectModuleAccessor, on: boo
 }
 
 // ---------------------------------------------------------------------------
-// Hook: detect the taunt and flip the toggle
+// Hook 1: detect the taunt and flip the toggle
 // ---------------------------------------------------------------------------
 
 #[skyline::hook(replace = MotionModule::change_motion)]
@@ -88,16 +86,25 @@ unsafe fn change_motion_hook(
 }
 
 // ---------------------------------------------------------------------------
-// Per-frame: re-apply visibility
+// Hook 2: runs every frame for every fighter, so we re-apply the visibility
 //
 // The game resets mesh visibility on respawn, on some motion changes, etc.,
 // so we keep enforcing the toggle state every frame for Ike.
+// This function is called several times per frame (once per command
+// category), so we only do the work when category == 0.
 // ---------------------------------------------------------------------------
 
-unsafe extern "C" fn ike_frame(fighter: &mut L2CFighterCommon) {
-    let module_accessor = smash::app::sv_system::battle_object_module_accessor(fighter.lua_state_agent);
-    let on = TOGGLE_STATE[entry_id(module_accessor)].load(Ordering::Relaxed);
-    apply_meshes(module_accessor, on);
+#[skyline::hook(replace = ControlModule::get_command_flag_cat)]
+unsafe fn command_flag_cat_hook(
+    module_accessor: *mut BattleObjectModuleAccessor,
+    category: i32,
+) -> i32 {
+    if category == 0 && is_ike(module_accessor) {
+        let on = TOGGLE_STATE[entry_id(module_accessor)].load(Ordering::Relaxed);
+        apply_meshes(module_accessor, on);
+    }
+
+    original!()(module_accessor, category)
 }
 
 // ---------------------------------------------------------------------------
@@ -106,6 +113,5 @@ unsafe extern "C" fn ike_frame(fighter: &mut L2CFighterCommon) {
 
 #[skyline::main(name = "ike_toggle")]
 pub fn main() {
-    install_hooks!(change_motion_hook);
-    Agent::new("ike").on_line(Main, ike_frame).install();
+    install_hooks!(change_motion_hook, command_flag_cat_hook);
 }
