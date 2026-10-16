@@ -18,8 +18,8 @@ jobs:
           export PATH=$PATH:/root/.cargo/bin:/opt/devkitpro/devkitA64/bin
           # The 2022 toolchain (rustc 1.67) is too old for the newest helper
           # libraries, so pin them to older versions that still work.
-          cargo update -p proc-macro2 --precise 1.0.78
           cargo update -p quote --precise 1.0.35
+          cargo update -p proc-macro2 --precise 1.0.78
           cargo skyline build --release
         env:
           HOME: /root
