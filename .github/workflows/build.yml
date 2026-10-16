@@ -1,0 +1,23 @@
+name: Build plugin
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: jugeeya/cargo-skyline:3.2.0-dkp
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build
+        run: cargo skyline build --release
+
+      - name: Upload plugin
+        uses: actions/upload-artifact@v4
+        with:
+          name: ike_toggle_plugin
+          path: target/aarch64-skyline-switch/release/libike_toggle.nro
